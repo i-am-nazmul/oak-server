@@ -122,6 +122,18 @@ app.post('/api/creators', authenticateToken, upload.array('images', 10), async (
   }
 });
 
+// Fetch All Content Creators (Protected Route)
+app.get('/api/creators', authenticateToken, async (req, res) => {
+  try {
+    // Fetch all creators, sorted by newest first
+    const creators = await ContentCreator.find().sort({ createdAt: -1 });
+    res.json({ creators });
+  } catch (error) {
+    console.error('Error fetching creators:', error);
+    res.status(500).json({ message: 'Server error while fetching content creators' });
+  }
+});
+
 // Protected Dashboard route
 app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
   res.json({
