@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 // Import models
 const Admin = require('./models/Admin');
 const ContentCreator = require('./models/ContentCreator');
+const { upload } = require('./config/cloudinary');
 
 dotenv.config();
 
@@ -80,6 +81,46 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// Add New Content Creator (Protected Route with Multiple Image Uploads)
+app.post('/api/creators', authenticateToken, upload.array('images', 10), async (req, res) => {
+  try {
+    const { name } = req.body;
+    let following = {};
+    
+    if (req.body.following) {
+      try {
+        // following might be sent as a JSON string in FormData
+        following = typeof req.body.following === 'string' ? JSON.parse(req.body.following) : req.body.following;
+      } catch (err) {
+        console.warn('Could not parse following data', err);
+      }
+    }
+
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required.' });
+    }
+    
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'At least one image is required.' });
+    }
+
+    // Extract Cloudinary URLs from multer-storage-cloudinary
+    const imageUrls = req.files.map(file => file.path);
+
+    const newCreator = new ContentCreator({
+      name,
+      images: imageUrls,
+      following
+    });
+
+    await newCreator.save();
+    res.status(201).json({ message: 'Content creator added successfully', creator: newCreator });
+  } catch (error) {
+    console.error('Error adding creator:', error);
+    res.status(500).json({ message: 'Server error while adding content creator' });
+  }
+});
 
 // Protected Dashboard route
 app.get('/api/dashboard/stats', authenticateToken, (req, res) => {

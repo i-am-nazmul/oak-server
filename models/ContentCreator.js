@@ -6,10 +6,10 @@ const contentCreatorSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  image: {
-    type: String, // Cloudinary URL string
+  images: [{
+    type: String, // Cloudinary URL strings
     required: true,
-  },
+  }],
   following: {
     youtube: {
       type: Number,
